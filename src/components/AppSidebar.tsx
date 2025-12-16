@@ -34,9 +34,9 @@ export function AppSidebar({ isAdmin = false, userName = 'User', onLogout }: App
       <SidebarHeader className="p-4 border-b border-sidebar-border">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
-            <span className="text-sidebar-primary-foreground font-bold text-sm">DT</span>
+            <img src="/Logo Debtrac.png" alt="Debtrac" className="h-8 w-8" />
           </div>
-          <span className="font-semibold text-sidebar-foreground">DebtTracker</span>
+          <span className="font-semibold text-sidebar-foreground">Debtrac</span>
         </div>
       </SidebarHeader>
 

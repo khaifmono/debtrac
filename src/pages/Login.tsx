@@ -39,7 +39,7 @@ export default function Login({ onLogin }: LoginProps) {
           <div className="mx-auto h-12 w-12 rounded-xl bg-primary flex items-center justify-center mb-2">
             <span className="text-primary-foreground font-bold text-lg">DT</span>
           </div>
-          <CardTitle className="text-xl">DebtTracker</CardTitle>
+          <CardTitle className="text-xl">Debtrac</CardTitle>
           <CardDescription>Sign in to your account</CardDescription>
         </CardHeader>
         <CardContent>
