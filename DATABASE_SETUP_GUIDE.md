@@ -666,7 +666,29 @@ cd /Users/khaif/Documents/code-repo/debtrac/debtrac/backend
 npm run dev
 ```
 
+Or use the automated setup script:
+
+```bash
+cd /Users/khaif/Documents/code-repo/debtrac/debtrac
+./setup-backend.sh
+```
+
 The backend should now be running on `http://localhost:3001`
+
+### Step 10: Run Database Migrations
+
+If not using the setup script, run migrations manually:
+
+```bash
+cd backend
+npm run migrate
+```
+
+To seed with sample data:
+
+```bash
+npm run db:seed
+```
 
 ---
 
