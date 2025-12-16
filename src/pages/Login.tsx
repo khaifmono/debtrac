@@ -37,7 +37,7 @@ export default function Login({ onLogin }: LoginProps) {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <div className="mx-auto h-12 w-12 rounded-xl bg-primary flex items-center justify-center mb-2">
-            <span className="text-primary-foreground font-bold text-lg">DT</span>
+            <img src="/Logo Debtrac.png" alt="Debtrac" className="h-8 w-8" />
           </div>
           <CardTitle className="text-xl">Debtrac</CardTitle>
           <CardDescription>Sign in to your account</CardDescription>
