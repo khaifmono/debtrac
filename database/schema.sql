@@ -105,3 +105,4 @@ CREATE TRIGGER trigger_update_debt_remaining
 -- Insert a default user (replace with your authentication system)
 INSERT INTO users (id, email, name, role) VALUES
 ('550e8400-e29b-41d4-a716-446655440000', 'user@example.com', 'Default User', 'user');
+

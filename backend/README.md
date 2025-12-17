@@ -77,3 +77,4 @@ The database uses the following tables:
 - `migrations` - Migration tracking
 
 Run migrations to set up the database schema automatically.
+

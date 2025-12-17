@@ -70,3 +70,4 @@ echo "4. The API will be available at http://localhost:3001"
 echo ""
 echo "🔗 API Health Check: http://localhost:3001/api/health"
 echo "📚 API Documentation: Check backend/README.md"
+
