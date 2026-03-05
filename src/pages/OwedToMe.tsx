@@ -50,6 +50,7 @@ export default function OwedToMe() {
 
   const handleDebtSubmit = (data: {
     person_name: string;
+    phone?: string;
     direction: DebtDirection;
     amount: number;
     due_date: string | null;

@@ -24,6 +24,7 @@ interface AddDebtDialogProps {
   defaultDirection?: DebtDirection;
   onSubmit: (data: {
     person_name: string;
+    phone?: string;
     direction: DebtDirection;
     amount: number;
     due_date: string | null;
@@ -38,6 +39,7 @@ export function AddDebtDialog({
   onSubmit 
 }: AddDebtDialogProps) {
   const [personName, setPersonName] = useState('');
+  const [phone, setPhone] = useState('');
   const [direction, setDirection] = useState<DebtDirection>(defaultDirection);
   const [amount, setAmount] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -48,6 +50,7 @@ export function AddDebtDialog({
     
     onSubmit({
       person_name: personName.trim(),
+      phone: phone.trim() || undefined,
       direction,
       amount: parseFloat(amount),
       due_date: dueDate || null,
@@ -56,6 +59,7 @@ export function AddDebtDialog({
 
     // Reset form
     setPersonName('');
+    setPhone('');
     setAmount('');
     setDueDate('');
     setNotes('');
@@ -79,6 +83,17 @@ export function AddDebtDialog({
               placeholder="Enter name"
               required
               autoFocus
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone Number (optional)</Label>
+            <Input
+              id="phone"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+60123456789"
             />
           </div>
 

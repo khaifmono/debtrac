@@ -21,6 +21,7 @@ interface Debt {
 interface CreateDebtRequest {
   person_id: string;
   person_name: string;
+  phone?: string;
   direction: 'owed_to_me' | 'i_owe';
   amount: number;
   due_date?: string;
@@ -69,7 +70,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 // Create a new debt
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const { person_id, person_name, direction, amount, due_date, notes }: CreateDebtRequest = req.body;
+    const { person_id, person_name, phone, direction, amount, due_date, notes }: CreateDebtRequest = req.body;
 
     // Validate required fields
     if (!person_name || !direction || !amount) {
@@ -95,10 +96,13 @@ router.post('/', async (req: Request, res: Response) => {
       );
       if (existing.rows.length > 0) {
         resolvedPersonId = existing.rows[0].id;
+        if (phone?.trim()) {
+          await query('UPDATE people SET phone = $1 WHERE id = $2', [phone.trim(), resolvedPersonId]);
+        }
       } else {
         const created = await query(
-          'INSERT INTO people (user_id, name) VALUES ($1, $2) RETURNING id',
-          [userId, person_name.trim()]
+          'INSERT INTO people (user_id, name, phone) VALUES ($1, $2, $3) RETURNING id',
+          [userId, person_name.trim(), phone?.trim() || null]
         );
         resolvedPersonId = created.rows[0].id;
       }

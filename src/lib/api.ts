@@ -59,8 +59,10 @@ export const debtApi = {
 // People API
 export const peopleApi = {
   getAll: () => request<Person[]>('/people'),
-  create: (person: Omit<Person, 'id' | 'created_at' | 'user_id'>) =>
+  create: (person: { name: string; phone?: string }) =>
     request<Person>('/people', { method: 'POST', body: JSON.stringify(person) }),
+  update: (id: string, data: { name: string; phone?: string | null }) =>
+    request<Person>(`/people/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 };
 
 // Payment API

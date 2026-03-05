@@ -69,31 +69,30 @@ export function AddPaymentDialog({
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="amount">Amount (MYR)</Label>
-              <Button 
-                type="button" 
-                variant="link" 
-                size="sm" 
-                className="h-auto p-0 text-xs"
-                onClick={handleFullPayment}
-              >
-                Pay in full
-              </Button>
+          <div className="space-y-3">
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full"
+              onClick={handleFullPayment}
+            >
+              Pay in Full — {formatCurrency(Number(debt.remaining_amount))}
+            </Button>
+            <div className="space-y-2">
+              <Label htmlFor="amount">Or enter amount (MYR)</Label>
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                max={debt.remaining_amount}
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00"
+                required
+                autoFocus
+              />
             </div>
-            <Input
-              id="amount"
-              type="number"
-              step="0.01"
-              min="0.01"
-              max={debt.remaining_amount}
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0.00"
-              required
-              autoFocus
-            />
           </div>
 
           <div className="space-y-2">

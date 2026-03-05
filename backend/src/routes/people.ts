@@ -14,6 +14,7 @@ interface Person {
 
 interface CreatePersonRequest {
   name: string;
+  phone?: string;
 }
 
 // Get all people for the current user
@@ -58,7 +59,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 // Create a new person
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const { name }: CreatePersonRequest = req.body;
+    const { name, phone }: CreatePersonRequest = req.body;
 
     // Validate required fields
     if (!name || name.trim().length === 0) {
@@ -78,8 +79,8 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     const result = await query(
-      'INSERT INTO people (user_id, name) VALUES ($1, $2) RETURNING *',
-      [userId, name.trim()]
+      'INSERT INTO people (user_id, name, phone) VALUES ($1, $2, $3) RETURNING *',
+      [userId, name.trim(), phone?.trim() || null]
     );
 
     res.status(201).json(result.rows[0]);
@@ -93,7 +94,7 @@ router.post('/', async (req: Request, res: Response) => {
 router.put('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name } = req.body;
+    const { name, phone } = req.body;
     const userId = req.user!.userId;
 
     if (!name || name.trim().length === 0) {
@@ -111,8 +112,8 @@ router.put('/:id', async (req: Request, res: Response) => {
     }
 
     const result = await query(
-      'UPDATE people SET name = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3 RETURNING *',
-      [name.trim(), id, userId]
+      'UPDATE people SET name = $1, phone = $2, updated_at = NOW() WHERE id = $3 AND user_id = $4 RETURNING *',
+      [name.trim(), phone?.trim() || null, id, userId]
     );
 
     if (result.rows.length === 0) {

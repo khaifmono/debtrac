@@ -168,8 +168,8 @@ export default function SplitBill() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <Label>Participants</Label>
-                  <Button type="button" variant="link" size="sm" onClick={splitEvenly} className="h-auto p-0">
-                    Split evenly
+                  <Button type="button" variant="secondary" size="sm" onClick={splitEvenly}>
+                    Split Evenly
                   </Button>
                 </div>
 

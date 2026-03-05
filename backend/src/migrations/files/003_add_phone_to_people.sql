@@ -1,0 +1,5 @@
+-- UP
+ALTER TABLE people ADD COLUMN phone VARCHAR(20);
+
+-- DOWN
+ALTER TABLE people DROP COLUMN IF EXISTS phone;
