@@ -19,7 +19,7 @@ interface CreatePersonRequest {
 // Get all people for the current user
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const userId = '550e8400-e29b-41d4-a716-446655440000'; // TODO: Get from auth
+    const userId = req.user!.userId;
 
     const result = await query(
       'SELECT * FROM people WHERE user_id = $1 ORDER BY name',
@@ -37,7 +37,7 @@ router.get('/', async (req: Request, res: Response) => {
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = '550e8400-e29b-41d4-a716-446655440000'; // TODO: Get from auth
+    const userId = req.user!.userId;
 
     const result = await query(
       'SELECT * FROM people WHERE id = $1 AND user_id = $2',
@@ -65,7 +65,7 @@ router.post('/', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Name is required' });
     }
 
-    const userId = '550e8400-e29b-41d4-a716-446655440000'; // TODO: Get from auth
+    const userId = req.user!.userId;
 
     // Check if person with this name already exists for this user
     const existingResult = await query(
@@ -94,7 +94,7 @@ router.put('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { name } = req.body;
-    const userId = '550e8400-e29b-41d4-a716-446655440000'; // TODO: Get from auth
+    const userId = req.user!.userId;
 
     if (!name || name.trim().length === 0) {
       return res.status(400).json({ error: 'Name is required' });
@@ -130,7 +130,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = '550e8400-e29b-41d4-a716-446655440000'; // TODO: Get from auth
+    const userId = req.user!.userId;
 
     const result = await query('DELETE FROM people WHERE id = $1 AND user_id = $2', [id, userId]);
 

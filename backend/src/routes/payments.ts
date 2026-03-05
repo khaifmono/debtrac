@@ -24,7 +24,7 @@ interface CreatePaymentRequest {
 router.get('/debt/:debtId', async (req: Request, res: Response) => {
   try {
     const { debtId } = req.params;
-    const userId = '550e8400-e29b-41d4-a716-446655440000'; // TODO: Get from auth
+    const userId = req.user!.userId;
 
     // First check if the debt belongs to the user
     const debtCheck = await query(
@@ -52,7 +52,7 @@ router.get('/debt/:debtId', async (req: Request, res: Response) => {
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = '550e8400-e29b-41d4-a716-446655440000'; // TODO: Get from auth
+    const userId = req.user!.userId;
 
     // Get payment with debt ownership check
     const result = await query(`
@@ -76,7 +76,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
   try {
     const { debt_id, amount, date, note }: CreatePaymentRequest = req.body;
-    const userId = '550e8400-e29b-41d4-a716-446655440000'; // TODO: Get from auth
+    const userId = req.user!.userId;
 
     // Validate required fields
     if (!debt_id || !amount) {
@@ -133,7 +133,7 @@ router.put('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { amount, date, note } = req.body;
-    const userId = '550e8400-e29b-41d4-a716-446655440000'; // TODO: Get from auth
+    const userId = req.user!.userId;
 
     if (amount !== undefined && amount <= 0) {
       return res.status(400).json({ error: 'Amount must be greater than 0' });
@@ -186,7 +186,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = '550e8400-e29b-41d4-a716-446655440000'; // TODO: Get from auth
+    const userId = req.user!.userId;
 
     // Check if payment exists and belongs to user's debt
     const existingResult = await query(`

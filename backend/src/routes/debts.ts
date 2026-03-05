@@ -30,8 +30,7 @@ interface CreateDebtRequest {
 // Get all debts for the current user
 router.get('/', async (req: Request, res: Response) => {
   try {
-    // TODO: Replace with actual user authentication
-    const userId = '550e8400-e29b-41d4-a716-446655440000';
+    const userId = req.user!.userId;
 
     const result = await query(
       'SELECT * FROM debts WHERE user_id = $1 ORDER BY created_at DESC',
@@ -49,7 +48,7 @@ router.get('/', async (req: Request, res: Response) => {
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = '550e8400-e29b-41d4-a716-446655440000'; // TODO: Get from auth
+    const userId = req.user!.userId;
 
     const result = await query(
       'SELECT * FROM debts WHERE id = $1 AND user_id = $2',
@@ -73,7 +72,7 @@ router.post('/', async (req: Request, res: Response) => {
     const { person_id, person_name, direction, amount, due_date, notes }: CreateDebtRequest = req.body;
 
     // Validate required fields
-    if (!person_id || !person_name || !direction || !amount) {
+    if (!person_name || !direction || !amount) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -85,13 +84,31 @@ router.post('/', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Amount must be greater than 0' });
     }
 
-    const userId = '550e8400-e29b-41d4-a716-446655440000'; // TODO: Get from auth
+    const userId = req.user!.userId;
+
+    // Auto-create person if person_id not provided
+    let resolvedPersonId = person_id;
+    if (!resolvedPersonId && person_name) {
+      const existing = await query(
+        'SELECT id FROM people WHERE user_id = $1 AND LOWER(name) = LOWER($2)',
+        [userId, person_name.trim()]
+      );
+      if (existing.rows.length > 0) {
+        resolvedPersonId = existing.rows[0].id;
+      } else {
+        const created = await query(
+          'INSERT INTO people (user_id, name) VALUES ($1, $2) RETURNING id',
+          [userId, person_name.trim()]
+        );
+        resolvedPersonId = created.rows[0].id;
+      }
+    }
 
     const result = await query(
       `INSERT INTO debts (user_id, person_id, person_name, direction, amount, due_date, notes, remaining_amount)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
-      [userId, person_id, person_name, direction, amount, due_date || null, notes || null, amount]
+      [userId, resolvedPersonId, person_name, direction, amount, due_date || null, notes || null, amount]
     );
 
     res.status(201).json(result.rows[0]);
@@ -106,7 +123,7 @@ router.put('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { status, notes } = req.body;
-    const userId = '550e8400-e29b-41d4-a716-446655440000'; // TODO: Get from auth
+    const userId = req.user!.userId;
 
     // Validate status if provided
     if (status && !['unpaid', 'partially_paid', 'settled'].includes(status)) {
@@ -133,7 +150,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = '550e8400-e29b-41d4-a716-446655440000'; // TODO: Get from auth
+    const userId = req.user!.userId;
 
     const result = await query('DELETE FROM debts WHERE id = $1 AND user_id = $2', [id, userId]);
 

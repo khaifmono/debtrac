@@ -7,6 +7,9 @@ import dotenv from 'dotenv';
 import debtRoutes from './routes/debts';
 import peopleRoutes from './routes/people';
 import paymentRoutes from './routes/payments';
+import authRoutes from './routes/auth';
+import userRoutes from './routes/users';
+import { authenticate, requireAdmin } from './middleware/auth';
 
 // Load environment variables
 dotenv.config();
@@ -43,10 +46,16 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// API routes
-app.use('/api/debts', debtRoutes);
-app.use('/api/people', peopleRoutes);
-app.use('/api/payments', paymentRoutes);
+// Public auth routes
+app.use('/api/auth', authRoutes);
+
+// Protected API routes
+app.use('/api/debts', authenticate, debtRoutes);
+app.use('/api/people', authenticate, peopleRoutes);
+app.use('/api/payments', authenticate, paymentRoutes);
+
+// Admin-only routes
+app.use('/api/users', authenticate, requireAdmin, userRoutes);
 
 // 404 handler
 app.use('/api/*', (req, res) => {
@@ -54,7 +63,7 @@ app.use('/api/*', (req, res) => {
 });
 
 // Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.Next) => {
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Unhandled error:', err);
 
   // Don't leak error details in production

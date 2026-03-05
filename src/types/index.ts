@@ -64,3 +64,21 @@ export interface PersonSummary {
   i_owe: number;
   net: number;
 }
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  mustChangePassword: boolean;
+}
+
+export interface LoginResponse {
+  token: string;
+  user: AuthUser;
+}
+
+export interface ChangePasswordResponse {
+  token: string;
+  message: string;
+}

@@ -71,8 +71,8 @@ export function AppSidebar({ isAdmin = false, userName = 'User', onLogout }: App
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink 
-                      to="/admin/users" 
+                    <NavLink
+                      to="/settings"
                       className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors hover:bg-sidebar-accent"
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                     >

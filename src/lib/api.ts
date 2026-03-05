@@ -1,39 +1,85 @@
-import axios from 'axios';
-import { Debt, Person, Payment } from '@/types';
+import { Debt, Person, Payment, LoginResponse, AuthUser, ChangePasswordResponse } from '@/types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const token = localStorage.getItem('auth_token');
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    headers,
+    ...options,
+  });
+
+  if (res.status === 401) {
+    localStorage.removeItem('auth_token');
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login';
+    }
+    throw new Error('Authentication required');
+  }
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(error.error || res.statusText);
+  }
+  if (res.status === 204) return undefined as T;
+  return res.json();
+}
+
+// Auth API
+export const authApi = {
+  login: (email: string, password: string) =>
+    request<LoginResponse>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    }),
+  me: () => request<AuthUser>('/auth/me'),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<ChangePasswordResponse>('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
+};
 
 // Debt API
 export const debtApi = {
-  getAll: () => api.get<Debt[]>('/debts').then(res => res.data),
-  create: (debt: Omit<Debt, 'id' | 'created_at' | 'remaining_amount'>) =>
-    api.post<Debt>('/debts', debt).then(res => res.data),
+  getAll: () => request<Debt[]>('/debts'),
+  create: (debt: Partial<Debt>) =>
+    request<Debt>('/debts', { method: 'POST', body: JSON.stringify(debt) }),
   update: (id: string, updates: Partial<Debt>) =>
-    api.put<Debt>(`/debts/${id}`, updates).then(res => res.data),
-  delete: (id: string) => api.delete(`/debts/${id}`),
+    request<Debt>(`/debts/${id}`, { method: 'PUT', body: JSON.stringify(updates) }),
+  delete: (id: string) =>
+    request<void>(`/debts/${id}`, { method: 'DELETE' }),
 };
 
 // People API
 export const peopleApi = {
-  getAll: () => api.get<Person[]>('/people').then(res => res.data),
+  getAll: () => request<Person[]>('/people'),
   create: (person: Omit<Person, 'id' | 'created_at' | 'user_id'>) =>
-    api.post<Person>('/people', person).then(res => res.data),
+    request<Person>('/people', { method: 'POST', body: JSON.stringify(person) }),
 };
 
 // Payment API
 export const paymentApi = {
   getByDebt: (debtId: string) =>
-    api.get<Payment[]>(`/payments/debt/${debtId}`).then(res => res.data),
+    request<Payment[]>(`/payments/debt/${debtId}`),
   create: (payment: Omit<Payment, 'id' | 'created_at'>) =>
-    api.post<Payment>('/payments', payment).then(res => res.data),
-  delete: (id: string) => api.delete(`/payments/${id}`),
+    request<Payment>('/payments', { method: 'POST', body: JSON.stringify(payment) }),
+  delete: (id: string) =>
+    request<void>(`/payments/${id}`, { method: 'DELETE' }),
 };
 
-export default api;
+// Users API (admin)
+export const usersApi = {
+  getAll: () => request<any[]>('/users'),
+  create: (data: { email: string; name: string; role?: string }) =>
+    request<any>('/users', { method: 'POST', body: JSON.stringify(data) }),
+  updateRole: (id: string, role: string) =>
+    request<any>(`/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role }) }),
+  delete: (id: string) =>
+    request<void>(`/users/${id}`, { method: 'DELETE' }),
+};
