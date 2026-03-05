@@ -1,19 +1,25 @@
 import { useState } from 'react';
 import { Layout } from '@/components/Layout';
-import { mockDebts, formatCurrency, calculatePersonSummaries } from '@/lib/mock-data';
+import { formatCurrency, calculatePersonSummaries } from '@/lib/mock-data';
+import { useDebts } from '@/hooks/use-debts';
 import { PersonDetailDialog } from '@/components/PersonDetailDialog';
 import { Input } from '@/components/ui/input';
 import { Search, User } from 'lucide-react';
 
 export default function People() {
+  const { data: debts = [], isLoading } = useDebts();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPerson, setSelectedPerson] = useState<string | null>(null);
   const [personDetailOpen, setPersonDetailOpen] = useState(false);
 
-  const summaries = calculatePersonSummaries(mockDebts);
+  const summaries = calculatePersonSummaries(debts);
   const filteredSummaries = summaries.filter(s =>
     s.person_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (isLoading) {
+    return <Layout><div className="flex items-center justify-center p-8 text-muted-foreground">Loading...</div></Layout>;
+  }
 
   return (
     <Layout>
@@ -57,7 +63,7 @@ export default function People() {
                     </div>
                     <span className="font-medium">{person.person_name}</span>
                   </div>
-                  
+
                   <div className="text-right">
                     <p className={`font-semibold ${
                       person.net >= 0 ? 'text-positive' : 'text-negative'
@@ -84,7 +90,7 @@ export default function People() {
         open={personDetailOpen}
         onOpenChange={setPersonDetailOpen}
         personName={selectedPerson}
-        debts={mockDebts}
+        debts={debts}
       />
     </Layout>
   );

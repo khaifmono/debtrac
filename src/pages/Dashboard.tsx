@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { Debt, DebtDirection, Payment } from '@/types';
-import { 
-  mockDebts, 
-  mockPayments,
-  calculateSummary, 
-  calculatePersonSummaries 
+import { Debt, DebtDirection } from '@/types';
+import {
+  calculateSummary,
+  calculatePersonSummaries
 } from '@/lib/mock-data';
+import { useDebts, useCreateDebt, useCreatePayment } from '@/hooks/use-debts';
 import { SummaryCards } from '@/components/SummaryCards';
 import { DebtList } from '@/components/DebtList';
 import { PersonSummaryList } from '@/components/PersonSummaryList';
@@ -21,8 +20,9 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function Dashboard() {
   const { toast } = useToast();
-  const [debts, setDebts] = useState<Debt[]>(mockDebts);
-  const [payments, setPayments] = useState<Payment[]>(mockPayments);
+  const { data: debts = [], isLoading } = useDebts();
+  const createDebt = useCreateDebt();
+  const createPayment = useCreatePayment();
   const [searchQuery, setSearchQuery] = useState('');
 
   // Dialog states
@@ -37,7 +37,7 @@ export default function Dashboard() {
   const [splitBillOpen, setSplitBillOpen] = useState(false);
 
   // Filter debts by search
-  const filteredDebts = debts.filter(d => 
+  const filteredDebts = debts.filter(d =>
     d.person_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     d.notes?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -57,21 +57,14 @@ export default function Dashboard() {
     due_date: string | null;
     notes: string | null;
   }) => {
-    const newDebt: Debt = {
-      id: Date.now().toString(),
-      user_id: 'user1',
-      person_id: Date.now().toString(),
-      person_name: data.person_name,
-      direction: data.direction,
-      amount: data.amount,
-      status: 'unpaid',
-      due_date: data.due_date,
-      notes: data.notes,
-      created_at: new Date().toISOString(),
-      remaining_amount: data.amount,
-    };
-    setDebts([newDebt, ...debts]);
-    toast({ title: 'Debt added', description: `Added debt with ${data.person_name}` });
+    createDebt.mutate(data, {
+      onSuccess: () => {
+        toast({ title: 'Debt added', description: `Added debt with ${data.person_name}` });
+      },
+      onError: () => {
+        toast({ title: 'Error', description: 'Failed to add debt', variant: 'destructive' });
+      },
+    });
   };
 
   const handleAddPayment = (debt: Debt) => {
@@ -85,30 +78,14 @@ export default function Dashboard() {
     date: string;
     note: string | null;
   }) => {
-    const newPayment: Payment = {
-      id: Date.now().toString(),
-      debt_id: data.debt_id,
-      amount: data.amount,
-      date: data.date,
-      note: data.note,
-      created_at: new Date().toISOString(),
-    };
-    setPayments([...payments, newPayment]);
-
-    // Update debt
-    setDebts(debts.map(d => {
-      if (d.id === data.debt_id) {
-        const newRemaining = d.remaining_amount - data.amount;
-        return {
-          ...d,
-          remaining_amount: Math.max(0, newRemaining),
-          status: newRemaining <= 0 ? 'settled' : 'partially_paid',
-        };
-      }
-      return d;
-    }));
-
-    toast({ title: 'Payment recorded', description: `Recorded RM ${data.amount.toFixed(2)} payment` });
+    createPayment.mutate(data, {
+      onSuccess: () => {
+        toast({ title: 'Payment recorded', description: `Recorded RM ${data.amount.toFixed(2)} payment` });
+      },
+      onError: () => {
+        toast({ title: 'Error', description: 'Failed to record payment', variant: 'destructive' });
+      },
+    });
   };
 
   const handleViewDebt = (debt: Debt) => {
@@ -128,60 +105,51 @@ export default function Dashboard() {
   }) => {
     const payers = data.participants.filter(p => p.isPayer);
     const nonPayers = data.participants.filter(p => !p.isPayer);
-    
-    const newDebts: Debt[] = [];
-    
+
+    const debtPromises: Promise<any>[] = [];
+
     // If I paid, others owe me
     if (payers.some(p => p.name === 'Me')) {
       nonPayers.forEach(p => {
         if (p.amount > 0) {
-          newDebts.push({
-            id: Date.now().toString() + Math.random(),
-            user_id: 'user1',
-            person_id: Date.now().toString(),
-            person_name: p.name,
-            direction: 'owed_to_me',
-            amount: p.amount,
-            status: 'unpaid',
-            due_date: null,
-            notes: `Split bill: ${data.title}`,
-            created_at: new Date().toISOString(),
-            remaining_amount: p.amount,
-          });
+          debtPromises.push(
+            createDebt.mutateAsync({
+              person_name: p.name,
+              direction: 'owed_to_me',
+              amount: p.amount,
+              notes: `Split bill: ${data.title}`,
+            })
+          );
         }
       });
     }
-    
+
     // If others paid, I owe them
     payers.filter(p => p.name !== 'Me').forEach(payer => {
       const meParticipant = data.participants.find(p => p.name === 'Me');
       if (meParticipant && meParticipant.amount > 0) {
-        newDebts.push({
-          id: Date.now().toString() + Math.random(),
-          user_id: 'user1',
-          person_id: Date.now().toString(),
-          person_name: payer.name,
-          direction: 'i_owe',
-          amount: meParticipant.amount,
-          status: 'unpaid',
-          due_date: null,
-          notes: `Split bill: ${data.title}`,
-          created_at: new Date().toISOString(),
-          remaining_amount: meParticipant.amount,
-        });
+        debtPromises.push(
+          createDebt.mutateAsync({
+            person_name: payer.name,
+            direction: 'i_owe',
+            amount: meParticipant.amount,
+            notes: `Split bill: ${data.title}`,
+          })
+        );
       }
     });
 
-    setDebts([...newDebts, ...debts]);
-    toast({ 
-      title: 'Bill split', 
-      description: `Created ${newDebts.length} debt record(s) from "${data.title}"` 
+    Promise.all(debtPromises).then(() => {
+      toast({
+        title: 'Bill split',
+        description: `Created ${debtPromises.length} debt record(s) from "${data.title}"`
+      });
     });
   };
 
-  const debtPayments = selectedDebt 
-    ? payments.filter(p => p.debt_id === selectedDebt.id)
-    : [];
+  if (isLoading) {
+    return <div className="flex items-center justify-center p-8 text-muted-foreground">Loading...</div>;
+  }
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -232,8 +200,8 @@ export default function Dashboard() {
           />
         </div>
         <div>
-          <PersonSummaryList 
-            summaries={personSummaries} 
+          <PersonSummaryList
+            summaries={personSummaries}
             onSelectPerson={handleSelectPerson}
           />
         </div>
@@ -258,7 +226,6 @@ export default function Dashboard() {
         open={debtDetailOpen}
         onOpenChange={setDebtDetailOpen}
         debt={selectedDebt}
-        payments={debtPayments}
         onAddPayment={() => {
           setDebtDetailOpen(false);
           if (selectedDebt) handleAddPayment(selectedDebt);

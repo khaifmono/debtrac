@@ -1,6 +1,6 @@
 #!/usr/bin/env ts-node
 
-import { query } from './database';
+import { query } from '../database';
 import { v4 as uuidv4 } from 'uuid';
 
 async function seedDatabase() {
@@ -149,7 +149,9 @@ async function seedDatabase() {
 // Check if this script is being run directly
 if (require.main === module) {
   seedDatabase()
-    .then(() => process.exit(0))
+    .then(() => {
+      process.exit(0);
+    })
     .catch((error) => {
       console.error(error);
       process.exit(1);

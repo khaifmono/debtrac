@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Layout } from '@/components/Layout';
-import { Debt, DebtDirection, Payment } from '@/types';
-import { mockDebts, mockPayments, formatCurrency, formatDate } from '@/lib/mock-data';
+import { Debt, DebtDirection } from '@/types';
+import { formatCurrency, formatDate } from '@/lib/mock-data';
+import { useDebts, useCreateDebt, useCreatePayment, usePayments } from '@/hooks/use-debts';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,14 +29,16 @@ function getStatusBadgeVariant(status: string): 'unpaid' | 'partial' | 'settled'
 
 export default function OwedToMe() {
   const { toast } = useToast();
-  const [debts, setDebts] = useState<Debt[]>(mockDebts.filter(d => d.direction === 'owed_to_me'));
-  const [payments, setPayments] = useState<Payment[]>(mockPayments);
+  const { data: allDebts = [], isLoading } = useDebts();
+  const createDebt = useCreateDebt();
+  const createPayment = useCreatePayment();
   const [searchQuery, setSearchQuery] = useState('');
   const [addDebtOpen, setAddDebtOpen] = useState(false);
   const [addPaymentOpen, setAddPaymentOpen] = useState(false);
   const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null);
   const [debtDetailOpen, setDebtDetailOpen] = useState(false);
 
+  const debts = allDebts.filter(d => d.direction === 'owed_to_me');
   const filteredDebts = debts.filter(d =>
     d.person_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     d.notes?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -43,7 +46,7 @@ export default function OwedToMe() {
 
   const totalOwed = filteredDebts
     .filter(d => d.status !== 'settled')
-    .reduce((sum, d) => sum + d.remaining_amount, 0);
+    .reduce((sum, d) => sum + Number(d.remaining_amount), 0);
 
   const handleDebtSubmit = (data: {
     person_name: string;
@@ -52,21 +55,11 @@ export default function OwedToMe() {
     due_date: string | null;
     notes: string | null;
   }) => {
-    const newDebt: Debt = {
-      id: Date.now().toString(),
-      user_id: 'user1',
-      person_id: Date.now().toString(),
-      person_name: data.person_name,
-      direction: 'owed_to_me',
-      amount: data.amount,
-      status: 'unpaid',
-      due_date: data.due_date,
-      notes: data.notes,
-      created_at: new Date().toISOString(),
-      remaining_amount: data.amount,
-    };
-    setDebts([newDebt, ...debts]);
-    toast({ title: 'Debt added', description: `${data.person_name} owes you ${formatCurrency(data.amount)}` });
+    createDebt.mutate({ ...data, direction: 'owed_to_me' }, {
+      onSuccess: () => {
+        toast({ title: 'Debt added', description: `${data.person_name} owes you ${formatCurrency(data.amount)}` });
+      },
+    });
   };
 
   const handlePaymentSubmit = (data: {
@@ -75,30 +68,16 @@ export default function OwedToMe() {
     date: string;
     note: string | null;
   }) => {
-    const newPayment: Payment = {
-      id: Date.now().toString(),
-      debt_id: data.debt_id,
-      amount: data.amount,
-      date: data.date,
-      note: data.note,
-      created_at: new Date().toISOString(),
-    };
-    setPayments([...payments, newPayment]);
-
-    setDebts(debts.map(d => {
-      if (d.id === data.debt_id) {
-        const newRemaining = d.remaining_amount - data.amount;
-        return {
-          ...d,
-          remaining_amount: Math.max(0, newRemaining),
-          status: newRemaining <= 0 ? 'settled' : 'partially_paid',
-        };
-      }
-      return d;
-    }));
-
-    toast({ title: 'Payment recorded' });
+    createPayment.mutate(data, {
+      onSuccess: () => {
+        toast({ title: 'Payment recorded' });
+      },
+    });
   };
+
+  if (isLoading) {
+    return <Layout><div className="flex items-center justify-center p-8 text-muted-foreground">Loading...</div></Layout>;
+  }
 
   return (
     <Layout>
@@ -167,10 +146,10 @@ export default function OwedToMe() {
                   <div className="text-right flex items-center gap-2">
                     <div>
                       <p className="font-semibold text-positive">
-                        {formatCurrency(debt.remaining_amount)}
+                        {formatCurrency(Number(debt.remaining_amount))}
                       </p>
-                      {debt.remaining_amount !== debt.amount && (
-                        <p className="text-xs text-muted-foreground">of {formatCurrency(debt.amount)}</p>
+                      {Number(debt.remaining_amount) !== Number(debt.amount) && (
+                        <p className="text-xs text-muted-foreground">of {formatCurrency(Number(debt.amount))}</p>
                       )}
                     </div>
                     <DropdownMenu>
@@ -215,7 +194,6 @@ export default function OwedToMe() {
         open={debtDetailOpen}
         onOpenChange={setDebtDetailOpen}
         debt={selectedDebt}
-        payments={payments.filter(p => p.debt_id === selectedDebt?.id)}
         onAddPayment={() => {
           setDebtDetailOpen(false);
           setAddPaymentOpen(true);

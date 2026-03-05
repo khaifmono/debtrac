@@ -1,5 +1,6 @@
-import { Debt, Payment } from '@/types';
+import { Debt } from '@/types';
 import { formatCurrency, formatDate } from '@/lib/mock-data';
+import { usePayments } from '@/hooks/use-debts';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,7 +15,6 @@ interface DebtDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   debt: Debt | null;
-  payments: Payment[];
   onAddPayment: () => void;
 }
 
@@ -36,13 +36,14 @@ function getStatusLabel(status: string): string {
   }
 }
 
-export function DebtDetailDialog({ 
-  open, 
-  onOpenChange, 
-  debt, 
-  payments,
-  onAddPayment 
+export function DebtDetailDialog({
+  open,
+  onOpenChange,
+  debt,
+  onAddPayment
 }: DebtDetailDialogProps) {
+  const { data: payments = [] } = usePayments(open && debt ? debt.id : undefined);
+
   if (!debt) return null;
 
   const isOwedToMe = debt.direction === 'owed_to_me';
@@ -60,7 +61,7 @@ export function DebtDetailDialog({
             </Badge>
           </div>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           {/* Amount */}
           <div className="bg-muted/50 rounded-lg p-4">
@@ -70,11 +71,11 @@ export function DebtDetailDialog({
               </span>
               <div className="text-right">
                 <p className={`text-2xl font-semibold ${isOwedToMe ? 'text-positive' : 'text-negative'}`}>
-                  {formatCurrency(debt.remaining_amount)}
+                  {formatCurrency(Number(debt.remaining_amount))}
                 </p>
-                {debt.remaining_amount !== debt.amount && (
+                {Number(debt.remaining_amount) !== Number(debt.amount) && (
                   <p className="text-sm text-muted-foreground">
-                    of {formatCurrency(debt.amount)} total
+                    of {formatCurrency(Number(debt.amount))} total
                   </p>
                 )}
               </div>
@@ -114,7 +115,7 @@ export function DebtDetailDialog({
                       )}
                     </div>
                     <span className="font-medium text-positive">
-                      +{formatCurrency(payment.amount)}
+                      +{formatCurrency(Number(payment.amount))}
                     </span>
                   </div>
                 ))}

@@ -201,7 +201,9 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
-main().catch((error) => {
+main().then(() => {
+  process.exit(0);
+}).catch((error) => {
   console.error('❌ Migration failed:', error);
   process.exit(1);
 });

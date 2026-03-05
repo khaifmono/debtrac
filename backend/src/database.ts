@@ -9,7 +9,7 @@ if (!process.env.DATABASE_URL) {
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
   max: 20, // Maximum number of connections
   idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
   connectionTimeoutMillis: 2000, // Return error after 2 seconds if connection could not be established
@@ -59,20 +59,20 @@ export async function getClient() {
   // Set a timeout of 5 seconds, after which we will log this client's last query
   const timeout = setTimeout(() => {
     console.error('⚠️ A client has been checked out for more than 5 seconds!');
-    console.error(`⚠️ The last executed query on this client was: ${client.lastQuery}`);
+    console.error(`⚠️ The last executed query on this client was: ${(client as any).lastQuery}`);
   }, 5000);
 
   // Monkey patch the query method to keep track of the last query executed
-  client.query = (...args: any[]) => {
-    client.lastQuery = args;
-    return query.apply(client, args);
+  (client as any).query = (...args: any[]) => {
+    (client as any).lastQuery = args;
+    return query.apply(client, args as any);
   };
 
-  client.release = () => {
+  (client as any).release = () => {
     clearTimeout(timeout);
     // Set the methods back to their old un-monkey-patched version
-    client.query = query;
-    client.release = release;
+    (client as any).query = query;
+    (client as any).release = release;
     return release.apply(client);
   };
 

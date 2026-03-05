@@ -90,11 +90,11 @@ export const mockPayments: Payment[] = [
 export function calculateSummary(debts: Debt[]): DebtSummary {
   const total_owed_to_me = debts
     .filter(d => d.direction === 'owed_to_me' && d.status !== 'settled')
-    .reduce((sum, d) => sum + d.remaining_amount, 0);
-  
+    .reduce((sum, d) => sum + Number(d.remaining_amount), 0);
+
   const total_i_owe = debts
     .filter(d => d.direction === 'i_owe' && d.status !== 'settled')
-    .reduce((sum, d) => sum + d.remaining_amount, 0);
+    .reduce((sum, d) => sum + Number(d.remaining_amount), 0);
 
   return {
     total_owed_to_me,
@@ -117,9 +117,9 @@ export function calculatePersonSummaries(debts: Debt[]): PersonSummary[] {
     };
 
     if (debt.direction === 'owed_to_me') {
-      existing.owed_to_me += debt.remaining_amount;
+      existing.owed_to_me += Number(debt.remaining_amount);
     } else {
-      existing.i_owe += debt.remaining_amount;
+      existing.i_owe += Number(debt.remaining_amount);
     }
     existing.net = existing.owed_to_me - existing.i_owe;
 
@@ -131,8 +131,8 @@ export function calculatePersonSummaries(debts: Debt[]): PersonSummary[] {
   );
 }
 
-export function formatCurrency(amount: number): string {
-  return `RM ${amount.toFixed(2)}`;
+export function formatCurrency(amount: number | string): string {
+  return `RM ${Number(amount).toFixed(2)}`;
 }
 
 export function formatDate(dateStr: string | null): string {

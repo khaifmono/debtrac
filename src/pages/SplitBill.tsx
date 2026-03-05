@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Layout } from '@/components/Layout';
 import { SplitBillParticipant } from '@/types';
 import { formatCurrency } from '@/lib/mock-data';
+import { useCreateDebt } from '@/hooks/use-debts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +13,7 @@ import { Plus, Trash2, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function SplitBill() {
   const { toast } = useToast();
+  const createDebt = useCreateDebt();
   const [title, setTitle] = useState('');
   const [totalAmount, setTotalAmount] = useState('');
   const [participants, setParticipants] = useState<SplitBillParticipant[]>([
@@ -42,23 +44,23 @@ export default function SplitBill() {
   const splitEvenly = () => {
     const count = participants.length + (includeSelf ? 1 : 0);
     if (count === 0 || !total) return;
-    
+
     const perPerson = Math.round((total / count) * 100) / 100;
     const remainder = Math.round((total - perPerson * count) * 100) / 100;
-    
+
     setParticipants(participants.map((p, i) => ({
       ...p,
       amount: i === 0 ? perPerson + remainder : perPerson,
     })));
-    
+
     if (includeSelf) {
       setSelfAmount(perPerson.toString());
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const allParticipants = [
       ...participants.filter(p => p.name.trim()),
     ];
@@ -71,26 +73,45 @@ export default function SplitBill() {
       });
     }
 
-    // Calculate debts
     const payers = allParticipants.filter(p => p.isPayer);
     const nonPayers = allParticipants.filter(p => !p.isPayer);
-    
-    let debtsCreated = 0;
-    
+
+    const debtPromises: Promise<any>[] = [];
+
     if (payers.some(p => p.name === 'Me')) {
-      debtsCreated += nonPayers.filter(p => p.amount > 0).length;
+      nonPayers.forEach(p => {
+        if (p.amount > 0) {
+          debtPromises.push(
+            createDebt.mutateAsync({
+              person_name: p.name,
+              direction: 'owed_to_me',
+              amount: p.amount,
+              notes: `Split bill: ${title}`,
+            })
+          );
+        }
+      });
     }
-    
-    payers.filter(p => p.name !== 'Me').forEach(() => {
+
+    payers.filter(p => p.name !== 'Me').forEach(payer => {
       const meParticipant = allParticipants.find(p => p.name === 'Me');
       if (meParticipant && meParticipant.amount > 0) {
-        debtsCreated++;
+        debtPromises.push(
+          createDebt.mutateAsync({
+            person_name: payer.name,
+            direction: 'i_owe',
+            amount: meParticipant.amount,
+            notes: `Split bill: ${title}`,
+          })
+        );
       }
     });
 
-    toast({ 
-      title: 'Bill split successfully', 
-      description: `Created ${debtsCreated} debt record(s) from "${title}"` 
+    await Promise.all(debtPromises);
+
+    toast({
+      title: 'Bill split successfully',
+      description: `Created ${debtPromises.length} debt record(s) from "${title}"`
     });
 
     // Reset form
@@ -239,12 +260,12 @@ export default function SplitBill() {
                 </span>
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={!isBalanced || !title || participants.every(p => !p.name.trim())}
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={!isBalanced || !title || participants.every(p => !p.name.trim()) || createDebt.isPending}
               >
-                Create Debts
+                {createDebt.isPending ? 'Creating...' : 'Create Debts'}
               </Button>
             </form>
           </CardContent>

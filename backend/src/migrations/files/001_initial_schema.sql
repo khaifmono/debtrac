@@ -75,11 +75,14 @@ CREATE OR REPLACE FUNCTION update_debt_remaining_amount()
 RETURNS TRIGGER AS $$
 DECLARE
     total_paid DECIMAL(10,2);
+    target_debt_id UUID;
 BEGIN
+    target_debt_id := COALESCE(NEW.debt_id, OLD.debt_id);
+
     -- Calculate total payments for this debt
     SELECT COALESCE(SUM(amount), 0) INTO total_paid
     FROM payments
-    WHERE debt_id = NEW.debt_id;
+    WHERE debt_id = target_debt_id;
 
     -- Update remaining amount
     UPDATE debts
@@ -90,9 +93,9 @@ BEGIN
             ELSE 'unpaid'
         END,
         updated_at = NOW()
-    WHERE id = NEW.debt_id;
+    WHERE id = target_debt_id;
 
-    RETURN NEW;
+    RETURN COALESCE(NEW, OLD);
 END;
 $$ LANGUAGE plpgsql;
 
