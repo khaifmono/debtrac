@@ -83,3 +83,13 @@ export interface ChangePasswordResponse {
   token: string;
   message: string;
 }
+
+export interface AppSettings {
+  custom_message: string;
+  smtp_host: string;
+  smtp_port: string;
+  smtp_username: string;
+  smtp_password: string;
+  smtp_from_email: string;
+  smtp_from_name: string;
+}

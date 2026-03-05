@@ -9,6 +9,7 @@ import peopleRoutes from './routes/people';
 import paymentRoutes from './routes/payments';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
+import settingsRoutes from './routes/settings';
 import { authenticate, requireAdmin } from './middleware/auth';
 
 // Load environment variables
@@ -56,6 +57,7 @@ app.use('/api/payments', authenticate, paymentRoutes);
 
 // Admin-only routes
 app.use('/api/users', authenticate, requireAdmin, userRoutes);
+app.use('/api/settings', authenticate, requireAdmin, settingsRoutes);
 
 // 404 handler
 app.use('/api/*', (req, res) => {

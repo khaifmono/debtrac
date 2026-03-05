@@ -1,4 +1,4 @@
-import { Debt, Person, Payment, LoginResponse, AuthUser, ChangePasswordResponse } from '@/types';
+import { Debt, Person, Payment, LoginResponse, AuthUser, ChangePasswordResponse, AppSettings } from '@/types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -73,6 +73,13 @@ export const paymentApi = {
     request<Payment>('/payments', { method: 'POST', body: JSON.stringify(payment) }),
   delete: (id: string) =>
     request<void>(`/payments/${id}`, { method: 'DELETE' }),
+};
+
+// Settings API (admin)
+export const settingsApi = {
+  get: () => request<AppSettings>('/settings'),
+  update: (data: Partial<AppSettings>) =>
+    request<AppSettings>('/settings', { method: 'PUT', body: JSON.stringify(data) }),
 };
 
 // Users API (admin)

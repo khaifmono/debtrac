@@ -77,7 +77,7 @@ export function AppSidebar({ isAdmin = false, userName = 'User', onLogout }: App
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                     >
                       <Settings className="h-4 w-4" />
-                      <span>Manage Users</span>
+                      <span>Settings</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
