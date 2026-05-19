@@ -7,10 +7,14 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply debtrac-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply debtrac-db --remote"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "drizzle-orm": "^0.45.2",
     "hono": "^4.6.0",
     "jose": "^5.9.0"
   },
@@ -19,6 +23,7 @@
     "@eslint/js": "^9.32.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.16.5",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9.32.0",
     "globals": "^15.15.0",
     "typescript": "^5.8.3",

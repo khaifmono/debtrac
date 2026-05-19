@@ -19,3 +19,4 @@ custom_domain = true
 binding = "DB"
 database_name = "debtrac-db"
 database_id = "357a7337-326b-4a26-9398-4cf16e654cc9"
+migrations_dir = "src/db/migrations"
