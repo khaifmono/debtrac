@@ -86,10 +86,7 @@ export interface ChangePasswordResponse {
 
 export interface AppSettings {
   custom_message: string;
-  smtp_host: string;
-  smtp_port: string;
-  smtp_username: string;
-  smtp_password: string;
-  smtp_from_email: string;
-  smtp_from_name: string;
+  brevo_api_key: string;
+  brevo_from_email: string;
+  brevo_from_name: string;
 }

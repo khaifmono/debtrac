@@ -157,20 +157,20 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Dashboard</h1>
-          <p className="text-muted-foreground">Track your debts and split bills</p>
+          <h1 className="text-xl lg:text-2xl font-semibold">Dashboard</h1>
+          <p className="text-muted-foreground text-sm hidden sm:block">Track your debts and split bills</p>
         </div>
-        <Button onClick={() => setSplitBillOpen(true)}>
-          <Receipt className="h-4 w-4 mr-2" />
-          Split Bill
+        <Button size="sm" onClick={() => setSplitBillOpen(true)}>
+          <Receipt className="h-4 w-4 mr-1.5" />
+          <span>Split Bill</span>
         </Button>
       </div>
 
       {/* Search */}
-      <div className="relative max-w-sm">
+      <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Search by person or note..."
+          placeholder="Search..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-9"
@@ -181,8 +181,8 @@ export default function Dashboard() {
       <SummaryCards summary={summary} />
 
       {/* Main Content */}
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-2 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+        <div className="lg:col-span-2 space-y-4 lg:space-y-6">
           <DebtList
             debts={filteredDebts}
             direction="owed_to_me"

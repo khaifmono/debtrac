@@ -1,0 +1,21 @@
+name = "debtrac"
+main = "worker.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = false
+
+[assets]
+directory = "dist"
+binding = "ASSETS"
+
+[vars]
+NODE_ENV = "production"
+
+[[routes]]
+pattern = "debt.khaif.dev"
+custom_domain = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "debtrac-db"
+database_id = "357a7337-326b-4a26-9398-4cf16e654cc9"

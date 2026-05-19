@@ -49,7 +49,7 @@ export function DebtList({
   const settledDebts = filteredDebts.filter(d => d.status === 'settled');
 
   return (
-    <div className="bg-card border rounded-lg">
+    <div className="bg-card border rounded-xl">
       <div className="flex items-center justify-between p-4 border-b">
         <div>
           <h2 className="font-semibold">{title}</h2>
@@ -75,10 +75,10 @@ export function DebtList({
           {filteredDebts.map((debt) => (
             <div
               key={debt.id}
-              className="p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+              className="p-4 active:bg-muted/70 hover:bg-muted/50 transition-colors cursor-pointer"
               onClick={() => onViewDebt(debt)}
             >
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-medium truncate">{debt.person_name}</span>

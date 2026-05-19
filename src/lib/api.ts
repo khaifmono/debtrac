@@ -91,4 +91,6 @@ export const usersApi = {
     request<any>(`/users/${id}/role`, { method: 'PUT', body: JSON.stringify({ role }) }),
   delete: (id: string) =>
     request<void>(`/users/${id}`, { method: 'DELETE' }),
+  sendTestEmail: (data: { brevoKey: string; fromEmail: string; fromName: string; toEmail: string }) =>
+    request<void>('/users/test-email', { method: 'POST', body: JSON.stringify(data) }),
 };
