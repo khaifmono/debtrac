@@ -126,7 +126,11 @@ router.get('/google/callback', async (c) => {
       }),
     });
 
-    if (!tokenRes.ok) return c.redirect('/login?error=google_failed');
+    if (!tokenRes.ok) {
+      const errBody = await tokenRes.json<{ error: string; error_description?: string }>().catch(() => ({ error: 'unknown' }));
+      console.error('Google token exchange failed:', tokenRes.status, JSON.stringify(errBody));
+      return c.redirect(`/login?error=google_failed&detail=${encodeURIComponent(errBody.error)}`);
+    }
     const { access_token } = await tokenRes.json<{ access_token: string }>();
 
     const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {

@@ -26,7 +26,10 @@ export default function Login() {
     const params = new URLSearchParams(window.location.search);
     const err = params.get('error');
     if (err === 'no_account') setError('No Debtrac account found for this Google account. Contact your administrator.');
-    else if (err === 'google_failed') setError('Google sign-in failed. Please try again.');
+    else if (err === 'google_failed') {
+      const detail = params.get('detail');
+      setError(`Google sign-in failed${detail ? `: ${detail}` : ''}. Please try again.`);
+    }
     else if (err === 'google_cancelled') setError('Google sign-in was cancelled. Please try again.');
     else if (err) setError(`Sign-in error: ${err}`);
     if (err) window.history.replaceState({}, '', window.location.pathname);
