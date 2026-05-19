@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,27 +17,26 @@ export default function Login() {
   const { toast } = useToast();
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const err = params.get('error');
+    const err = searchParams.get('error');
     if (err === 'no_account') setError('No Debtrac account found for this Google account. Contact your administrator.');
     else if (err === 'google_failed') {
-      const detail = params.get('detail');
+      const detail = searchParams.get('detail');
       setError(`Google sign-in failed${detail ? `: ${detail}` : ''}. Please try again.`);
     }
     else if (err === 'google_cancelled') setError('Google sign-in was cancelled. Please try again.');
     else if (err) setError(`Sign-in error: ${err}`);
-    if (err) window.history.replaceState({}, '', window.location.pathname);
-  }, []);
+    if (err) setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   if (isAuthenticated) {
-    navigate('/', { replace: true });
-    return null;
+    return <Navigate to="/" replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
