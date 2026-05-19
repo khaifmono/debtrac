@@ -8,5 +8,8 @@
     "lint": "pnpm -r --parallel lint",
     "deploy": "pnpm build && pnpm --filter @debtrac/api run deploy"
   },
-  "packageManager": "pnpm@10.27.0"
+  "packageManager": "pnpm@10.27.0",
+  "pnpm": {
+    "onlyBuiltDependencies": ["workerd", "esbuild", "@swc/core", "sharp"]
+  }
 }

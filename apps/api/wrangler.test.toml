@@ -1,0 +1,10 @@
+name = "debtrac"
+main = "src/app.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "debtrac-db-test"
+database_id = "00000000-0000-0000-0000-000000000001"
+migrations_dir = "src/db/migrations"

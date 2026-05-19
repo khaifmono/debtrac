@@ -23,6 +23,8 @@ jobs:
 
       - run: pnpm --filter @debtrac/web lint
 
+      - run: pnpm --filter @debtrac/api test
+
       - run: pnpm --filter @debtrac/web test
 
       - run: pnpm --filter @debtrac/web build
