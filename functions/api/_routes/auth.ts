@@ -141,6 +141,11 @@ router.get('/google/callback', async (c) => {
 
     if (!user) return c.redirect('/login?error=no_account');
 
+    // Clear must_change_password — Google login counts as authenticated
+    await c.env.DB.prepare(
+      "UPDATE users SET must_change_password = 0, updated_at = datetime('now') WHERE id = ?"
+    ).bind(user.id).run();
+
     const token = await generateToken(
       { userId: user.id, email: user.email, role: user.role as 'admin' | 'user', mustChangePassword: false },
       c.env.JWT_SECRET
