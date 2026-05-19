@@ -1,0 +1,28 @@
+{
+  "name": "@debtrac/api",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "hono": "^4.6.0",
+    "jose": "^5.9.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240909.0",
+    "@eslint/js": "^9.32.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.16.5",
+    "eslint": "^9.32.0",
+    "globals": "^15.15.0",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.38.0",
+    "wrangler": "^3.78.0"
+  }
+}

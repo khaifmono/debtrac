@@ -1,11 +1,11 @@
 import { Hono } from 'hono';
-import type { AppEnv } from './functions/api/_types';
-import authRoutes from './functions/api/_routes/auth';
-import debtRoutes from './functions/api/_routes/debts';
-import peopleRoutes from './functions/api/_routes/people';
-import paymentRoutes from './functions/api/_routes/payments';
-import userRoutes from './functions/api/_routes/users';
-import settingsRoutes from './functions/api/_routes/settings';
+import type { AppEnv } from './_types';
+import authRoutes from './_routes/auth';
+import debtRoutes from './_routes/debts';
+import peopleRoutes from './_routes/people';
+import paymentRoutes from './_routes/payments';
+import userRoutes from './_routes/users';
+import settingsRoutes from './_routes/settings';
 
 const app = new Hono<AppEnv>();
 

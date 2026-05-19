@@ -1,11 +1,11 @@
 name = "debtrac"
-main = "worker.ts"
+main = "src/app.ts"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = false
 
 [assets]
-directory = "dist"
+directory = "../web/dist"
 binding = "ASSETS"
 
 [vars]
