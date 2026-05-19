@@ -9,6 +9,17 @@ import settingsRoutes from './functions/api/_routes/settings';
 
 const app = new Hono<AppEnv>();
 
+// Prevent Cloudflare from caching the service worker — must always be fresh
+app.get('/sw.js', async (c) => {
+  const assets = (c.env as any)?.ASSETS as Fetcher | undefined;
+  if (!assets) return c.notFound();
+  const res = await assets.fetch(c.req.raw);
+  const headers = new Headers(res.headers);
+  headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  headers.set('Pragma', 'no-cache');
+  return new Response(res.body, { status: res.status, headers });
+});
+
 // Serve static assets for all non-API routes with SPA fallback
 app.use('*', async (c, next) => {
   if (c.req.path.startsWith('/api')) return next();
