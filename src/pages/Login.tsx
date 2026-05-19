@@ -47,8 +47,9 @@ export default function Login() {
       await login(email, password);
       toast({ title: 'Welcome back!', description: `Signed in as ${email}` });
       navigate('/');
-    } catch {
-      setError('Invalid email or password. Please try again.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      setError(`Login failed: ${msg}`);
     } finally {
       setIsLoading(false);
     }
