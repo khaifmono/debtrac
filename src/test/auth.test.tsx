@@ -64,7 +64,7 @@ describe('Login page', () => {
     fireEvent.submit(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('Invalid email or password. Please try again.')).toBeDefined();
+      expect(screen.getByText('Login failed: Invalid email or password')).toBeDefined();
     });
   });
 

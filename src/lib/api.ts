@@ -15,11 +15,12 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
 
   if (res.status === 401) {
+    const error = await res.json().catch(() => ({ error: 'Authentication required' }));
     localStorage.removeItem('auth_token');
     if (window.location.pathname !== '/login') {
       window.location.href = '/login';
     }
-    throw new Error('Authentication required');
+    throw new Error(error.error || 'Authentication required');
   }
 
   if (!res.ok) {
