@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import heic2any from 'heic2any';
 import { Layout } from '@/components/Layout';
 import { settingsApi } from '@/lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -11,38 +10,43 @@ import { Upload, X } from 'lucide-react';
 
 const DEFAULT_MESSAGE = 'Hi {name}, you currently owe {amount}. Please make payment at your earliest convenience.';
 
-// Convert any image (HEIC, JPG, PNG, …) → WebP, max 300×300 px
-async function toWebP(file: File): Promise<string> {
-  let blob: Blob = file;
+function blobToWebP(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(blob);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const MAX = 300;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { reject(new Error('Canvas unavailable')); return; }
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const out = canvas.toDataURL('image/webp', 0.85);
+      resolve(out.startsWith('data:image/webp') ? out : canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not decode image')); };
+    img.src = url;
+  });
+}
 
+async function toWebP(file: File): Promise<string> {
   const isHeic =
     file.type === 'image/heic' ||
     file.type === 'image/heif' ||
     /\.hei[cf]$/i.test(file.name);
 
   if (isHeic) {
-    const result = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
-    blob = Array.isArray(result) ? result[0] : result;
+    // Dynamic import isolates CJS interop issues; only loaded when needed
+    const mod = await import('heic2any');
+    const convert = (mod.default ?? mod) as (o: object) => Promise<Blob | Blob[]>;
+    const result = await convert({ blob: file, toType: 'image/jpeg', quality: 0.9 });
+    return blobToWebP(Array.isArray(result) ? result[0] : result);
   }
 
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(blob);
-    img.onload = () => {
-      const MAX = 300;
-      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.round(img.width * scale);
-      canvas.height = Math.round(img.height * scale);
-      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
-      URL.revokeObjectURL(url);
-      // Fall back to PNG if browser doesn't support WebP canvas output
-      const webp = canvas.toDataURL('image/webp', 0.85);
-      resolve(webp.startsWith('data:image/webp') ? webp : canvas.toDataURL('image/png'));
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Failed to load image')); };
-    img.src = url;
-  });
+  return blobToWebP(file);
 }
 
 export default function Payment() {
@@ -94,8 +98,9 @@ export default function Payment() {
     try {
       const webp = await toWebP(file);
       setQrBase64(webp);
-    } catch {
-      toast({ title: 'Error', description: 'Failed to process image.', variant: 'destructive' });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to process image';
+      toast({ title: 'Upload failed', description: msg, variant: 'destructive' });
       e.target.value = '';
     }
   };
