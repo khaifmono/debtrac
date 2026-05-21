@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Search, User, Phone, Pencil, UserPlus, Download } from 'lucide-react';
+import { Search, User, Phone, Pencil, UserPlus, Download, Copy, Check } from 'lucide-react';
 
 const WhatsAppIcon = () => (
   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -52,6 +52,7 @@ export default function People() {
   const [addName, setAddName] = useState('');
   const [addPhone, setAddPhone] = useState('');
   const [remindTarget, setRemindTarget] = useState<RemindTarget | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const updatePerson = useMutation({
     mutationFn: ({ id, data }: { id: string; data: { name: string; phone?: string | null } }) =>
@@ -133,6 +134,14 @@ export default function People() {
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     createPerson.mutate({ name: addName.trim(), phone: addPhone.trim() || undefined });
+  };
+
+  const qrPageUrl = `${window.location.origin}/qr`;
+
+  const copyQrUrl = async () => {
+    await navigator.clipboard.writeText(qrPageUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const downloadQr = () => {
@@ -255,24 +264,33 @@ export default function People() {
             <div className="space-y-4">
               {paymentSettings?.payment_qr && (
                 <div className="flex flex-col items-center gap-2">
-                  <p className="text-xs text-muted-foreground self-start">Share this QR alongside the message</p>
                   <img
                     src={paymentSettings.payment_qr}
                     alt="Payment QR"
                     className="h-48 w-48 object-contain border rounded-lg bg-white"
                   />
-                  <button
-                    onClick={downloadQr}
-                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <Download className="h-3 w-3" />
-                    Download QR
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={copyQrUrl}
+                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {copied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                      {copied ? 'Copied!' : 'Copy QR link'}
+                    </button>
+                    <span className="text-xs text-muted-foreground">·</span>
+                    <button
+                      onClick={downloadQr}
+                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Download className="h-3 w-3" />
+                      Download
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Paste the QR link in WhatsApp — it will show as an image preview
+                  </p>
                 </div>
               )}
-              <p className="text-xs text-muted-foreground">
-                WhatsApp will open with a pre-filled message. Send the QR code as a photo separately if needed.
-              </p>
               <a
                 href={remindTarget.waUrl}
                 target="_blank"
