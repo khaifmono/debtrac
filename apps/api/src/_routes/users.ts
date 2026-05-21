@@ -88,15 +88,20 @@ router.post('/test-email', async (c) => {
   if (!brevoKey || !fromEmail || !toEmail) {
     return c.json({ error: 'brevoKey, fromEmail, and toEmail are required' }, 400);
   }
-  await sendEmail({
-    to: { email: toEmail },
-    subject: 'Debtrac — Email test',
-    html: '<p>This is a test email from Debtrac. Your email configuration is working correctly.</p>',
-    fromEmail,
-    fromName: fromName || 'Debtrac',
-    apiKey: brevoKey,
-  });
-  return c.json({ ok: true });
+  try {
+    await sendEmail({
+      to: { email: toEmail },
+      subject: 'Debtrac — Email test',
+      html: '<p>This is a test email from Debtrac. Your email configuration is working correctly.</p>',
+      fromEmail,
+      fromName: fromName || 'Debtrac',
+      apiKey: brevoKey,
+    });
+    return c.json({ ok: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to send email';
+    return c.json({ error: message }, 502);
+  }
 });
 
 export default router;

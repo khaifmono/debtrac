@@ -100,7 +100,10 @@ export default function Settings() {
   const testEmail = useMutation({
     mutationFn: () => usersApi.sendTestEmail({ brevoKey, fromEmail: brevoFromEmail, fromName: brevoFromName, toEmail: user!.email }),
     onSuccess: () => toast({ title: 'Test email sent', description: `Sent to ${user?.email}` }),
-    onError: (err: Error) => toast({ title: 'Test failed', description: err.message, variant: 'destructive' }),
+    onError: (err: Error) => {
+      const msg = err.message.length > 120 ? err.message.slice(0, 120) + '…' : err.message;
+      toast({ title: 'Test failed', description: msg, variant: 'destructive' });
+    },
   });
 
   return (

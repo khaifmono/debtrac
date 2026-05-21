@@ -49,4 +49,9 @@ app.route('/api/settings', settingsRoutes);
 
 app.all('/api/*', (c) => c.json({ error: 'API endpoint not found' }, 404));
 
+app.onError((err, c) => {
+  console.error(err);
+  return c.json({ error: err.message || 'Internal server error' }, 500);
+});
+
 export default app;
