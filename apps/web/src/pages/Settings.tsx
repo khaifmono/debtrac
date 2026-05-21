@@ -106,6 +106,11 @@ export default function Settings() {
     },
   });
 
+  const savedSettings = settingsData as any;
+  const apiKeySaved = !!savedSettings?.brevo_api_key;
+  const fromEmailSaved = !!savedSettings?.brevo_from_email;
+  const isEmailConfigured = apiKeySaved && fromEmailSaved;
+
   return (
     <Layout>
       <div className="space-y-4 max-w-2xl">
@@ -117,7 +122,12 @@ export default function Settings() {
         <Tabs defaultValue="users">
           <TabsList className="w-full lg:w-auto">
             <TabsTrigger value="users" className="flex-1 lg:flex-none">Users</TabsTrigger>
-            <TabsTrigger value="email" className="flex-1 lg:flex-none">Email</TabsTrigger>
+            <TabsTrigger value="email" className="flex-1 lg:flex-none">
+              <span className="flex items-center gap-1.5">
+                Email
+                {isEmailConfigured && <span className="h-1.5 w-1.5 rounded-full bg-green-500" />}
+              </span>
+            </TabsTrigger>
           </TabsList>
 
           {/* ── USERS TAB ── */}
@@ -194,13 +204,24 @@ export default function Settings() {
           <TabsContent value="email" className="space-y-4 mt-4">
             <div className="bg-card border rounded-xl p-4 space-y-4">
               <div>
-                <h3 className="font-medium text-sm">Brevo (Sendinblue) Configuration</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-medium text-sm">Brevo (Sendinblue) Configuration</h3>
+                  {isEmailConfigured && (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-full">
+                      <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                      Configured
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground mt-0.5">Used to send invite emails when you add users.</p>
               </div>
 
               <div className="space-y-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="brevo-key" className="text-sm">API Key</Label>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="brevo-key" className="text-sm">API Key</Label>
+                    {apiKeySaved && <span className="text-xs font-medium text-green-600">Saved ✓</span>}
+                  </div>
                   <div className="relative">
                     <Input
                       id="brevo-key"
@@ -221,7 +242,10 @@ export default function Settings() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="brevo-from-email" className="text-sm">From Email</Label>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="brevo-from-email" className="text-sm">From Email</Label>
+                    {fromEmailSaved && <span className="text-xs font-medium text-green-600">Saved ✓</span>}
+                  </div>
                   <Input
                     id="brevo-from-email"
                     type="email"
