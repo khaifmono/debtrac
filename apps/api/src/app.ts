@@ -40,7 +40,6 @@ app.get('/qr', async (c) => {
   <meta property="og:title" content="Payment QR Code">
   <meta property="og:description" content="Scan to pay">
   <meta property="og:image" content="${imgUrl}">
-  <meta property="og:image:type" content="image/jpeg">
   <meta property="og:url" content="${origin}/qr">
   <meta name="twitter:card" content="summary_large_image">
   <title>Payment QR</title>

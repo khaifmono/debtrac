@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import heic2any from 'heic2any';
 import { Layout } from '@/components/Layout';
 import { settingsApi } from '@/lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -10,11 +11,23 @@ import { Upload, X } from 'lucide-react';
 
 const DEFAULT_MESSAGE = 'Hi {name}, you currently owe {amount}. Please make payment at your earliest convenience.';
 
-// Compress image to max 300×300 px, JPEG 85% — keeps base64 under ~60 KB
-function compressImage(file: File): Promise<string> {
+// Convert any image (HEIC, JPG, PNG, …) → WebP, max 300×300 px
+async function toWebP(file: File): Promise<string> {
+  let blob: Blob = file;
+
+  const isHeic =
+    file.type === 'image/heic' ||
+    file.type === 'image/heif' ||
+    /\.hei[cf]$/i.test(file.name);
+
+  if (isHeic) {
+    const result = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
+    blob = Array.isArray(result) ? result[0] : result;
+  }
+
   return new Promise((resolve, reject) => {
     const img = new Image();
-    const url = URL.createObjectURL(file);
+    const url = URL.createObjectURL(blob);
     img.onload = () => {
       const MAX = 300;
       const scale = Math.min(1, MAX / Math.max(img.width, img.height));
@@ -23,7 +36,9 @@ function compressImage(file: File): Promise<string> {
       canvas.height = Math.round(img.height * scale);
       canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(url);
-      resolve(canvas.toDataURL('image/jpeg', 0.85));
+      // Fall back to PNG if browser doesn't support WebP canvas output
+      const webp = canvas.toDataURL('image/webp', 0.85);
+      resolve(webp.startsWith('data:image/webp') ? webp : canvas.toDataURL('image/png'));
     };
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Failed to load image')); };
     img.src = url;
@@ -71,14 +86,14 @@ export default function Payment() {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      toast({ title: 'Image too large', description: 'Please use an image under 10 MB.', variant: 'destructive' });
+    if (file.size > 20 * 1024 * 1024) {
+      toast({ title: 'Image too large', description: 'Please use an image under 20 MB.', variant: 'destructive' });
       e.target.value = '';
       return;
     }
     try {
-      const compressed = await compressImage(file);
-      setQrBase64(compressed);
+      const webp = await toWebP(file);
+      setQrBase64(webp);
     } catch {
       toast({ title: 'Error', description: 'Failed to process image.', variant: 'destructive' });
       e.target.value = '';
@@ -147,13 +162,13 @@ export default function Payment() {
               >
                 <Upload className="h-5 w-5" />
                 <span>Click to upload QR image</span>
-                <span className="text-xs">PNG, JPG — auto-compressed before saving</span>
+                <span className="text-xs">PNG, JPG, HEIC — converted to WebP automatically</span>
               </button>
             )}
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept="image/*,.heic,.heif"
               className="hidden"
               onChange={handleFileChange}
             />
