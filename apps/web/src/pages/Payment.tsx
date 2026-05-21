@@ -39,11 +39,22 @@ async function toWebP(file: File): Promise<string> {
     /\.hei[cf]$/i.test(file.name);
 
   if (isHeic) {
-    // Dynamic import isolates CJS interop issues; only loaded when needed
-    const mod = await import('heic2any');
-    const convert = (mod.default ?? mod) as (o: object) => Promise<Blob | Blob[]>;
-    const result = await convert({ blob: file, toType: 'image/jpeg', quality: 0.9 });
-    return blobToWebP(Array.isArray(result) ? result[0] : result);
+    // 1st try: heic2any (Chrome/Firefox — no native HEIC support)
+    try {
+      const mod = await import('heic2any');
+      const convert = (mod.default ?? mod) as (o: object) => Promise<Blob | Blob[]>;
+      const result = await convert({ blob: file, toType: 'image/jpeg', quality: 0.9 });
+      return blobToWebP(Array.isArray(result) ? result[0] : result);
+    } catch {
+      // 2nd try: let the browser decode natively (Safari / iOS support HEIC natively)
+      try {
+        return await blobToWebP(file);
+      } catch {
+        throw new Error(
+          'Could not convert this HEIC file. Please open it in Photos or Preview, export as JPG, then re-upload.'
+        );
+      }
+    }
   }
 
   return blobToWebP(file);
