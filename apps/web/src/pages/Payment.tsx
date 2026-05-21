@@ -32,11 +32,27 @@ function blobToWebP(blob: Blob): Promise<string> {
   });
 }
 
-async function toWebP(file: File): Promise<string> {
-  const isHeic =
+// Read the first 12 bytes to detect HEIC/HEIF regardless of extension or MIME type
+async function detectHeic(file: File): Promise<boolean> {
+  if (
     file.type === 'image/heic' ||
     file.type === 'image/heif' ||
-    /\.hei[cf]$/i.test(file.name);
+    /\.hei[cf]$/i.test(file.name)
+  ) return true;
+  try {
+    const buf = await file.slice(0, 12).arrayBuffer();
+    const b = new Uint8Array(buf);
+    // ISOBMFF container: bytes 4-7 must be 'ftyp'
+    if (String.fromCharCode(b[4], b[5], b[6], b[7]) !== 'ftyp') return false;
+    const brand = String.fromCharCode(b[8], b[9], b[10], b[11]);
+    return ['heic', 'heix', 'hevc', 'hevx', 'heim', 'heis', 'mif1', 'msf1'].includes(brand);
+  } catch {
+    return false;
+  }
+}
+
+async function toWebP(file: File): Promise<string> {
+  const isHeic = await detectHeic(file);
 
   if (isHeic) {
     // 1st try: heic2any (Chrome/Firefox — no native HEIC support)
