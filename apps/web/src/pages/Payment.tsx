@@ -10,6 +10,26 @@ import { Upload, X } from 'lucide-react';
 
 const DEFAULT_MESSAGE = 'Hi {name}, you currently owe {amount}. Please make payment at your earliest convenience.';
 
+// Compress image to max 300×300 px, JPEG 85% — keeps base64 under ~60 KB
+function compressImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX = 300;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Failed to load image')); };
+    img.src = url;
+  });
+}
+
 export default function Payment() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -48,17 +68,21 @@ export default function Payment() {
     onError: (err: Error) => toast({ title: 'Error', description: err.message, variant: 'destructive' }),
   });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 500 * 1024) {
-      toast({ title: 'Image too large', description: 'QR image must be under 500 KB.', variant: 'destructive' });
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: 'Image too large', description: 'Please use an image under 10 MB.', variant: 'destructive' });
       e.target.value = '';
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => setQrBase64(reader.result as string);
-    reader.readAsDataURL(file);
+    try {
+      const compressed = await compressImage(file);
+      setQrBase64(compressed);
+    } catch {
+      toast({ title: 'Error', description: 'Failed to process image.', variant: 'destructive' });
+      e.target.value = '';
+    }
   };
 
   return (
@@ -93,7 +117,7 @@ export default function Payment() {
               value={bankDetails}
               onChange={e => setBankDetails(e.target.value)}
               rows={3}
-              placeholder="Bank: Maybank&#10;Account: 1234567890&#10;Name: Ahmad"
+              placeholder={'Bank: Maybank\nAccount: 1234567890\nName: Ahmad'}
             />
           </div>
 
@@ -105,6 +129,7 @@ export default function Payment() {
                   src={qrBase64}
                   alt="Payment QR"
                   className="h-40 w-40 object-contain border rounded-lg bg-white"
+                  onError={(e) => (e.currentTarget.style.display = 'none')}
                 />
                 <button
                   type="button"
@@ -122,7 +147,7 @@ export default function Payment() {
               >
                 <Upload className="h-5 w-5" />
                 <span>Click to upload QR image</span>
-                <span className="text-xs">PNG, JPG — max 500 KB</span>
+                <span className="text-xs">PNG, JPG — auto-compressed before saving</span>
               </button>
             )}
             <input
