@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, ArrowDownLeft, ArrowUpRight, Users, Receipt } from 'lucide-react';
+import { LayoutDashboard, ArrowDownLeft, ArrowUpRight, Users, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const items = [
@@ -7,7 +7,7 @@ const items = [
   { title: 'Owed Me',  url: '/owed-to-me', icon: ArrowDownLeft },
   { title: 'I Owe',    url: '/i-owe',      icon: ArrowUpRight },
   { title: 'People',   url: '/people',     icon: Users },
-  { title: 'Split',    url: '/split-bill', icon: Receipt },
+  { title: 'Payment',  url: '/payment',    icon: CreditCard },
 ];
 
 export function BottomNav() {

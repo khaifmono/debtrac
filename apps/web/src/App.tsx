@@ -12,6 +12,7 @@ import IOwe from "./pages/IOwe";
 import People from "./pages/People";
 import SplitBill from "./pages/SplitBill";
 import Settings from "./pages/Settings";
+import Payment from "./pages/Payment";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/people" element={<ProtectedRoute><People /></ProtectedRoute>} />
             <Route path="/split-bill" element={<ProtectedRoute><SplitBill /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

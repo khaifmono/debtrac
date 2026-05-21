@@ -89,4 +89,7 @@ export interface AppSettings {
   brevo_api_key: string;
   brevo_from_email: string;
   brevo_from_name: string;
+  payment_message: string;
+  bank_details: string;
+  payment_qr: string;
 }

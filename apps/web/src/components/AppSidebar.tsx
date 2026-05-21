@@ -1,4 +1,4 @@
-import { LayoutDashboard, ArrowDownLeft, ArrowUpRight, Users, Receipt, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, ArrowDownLeft, ArrowUpRight, Users, Receipt, Settings, LogOut, CreditCard } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import {
   Sidebar,
@@ -20,6 +20,7 @@ const mainNavItems = [
   { title: 'I Owe', url: '/i-owe', icon: ArrowUpRight },
   { title: 'People', url: '/people', icon: Users },
   { title: 'Split Bill', url: '/split-bill', icon: Receipt },
+  { title: 'Payment', url: '/payment', icon: CreditCard },
 ];
 
 interface AppSidebarProps {

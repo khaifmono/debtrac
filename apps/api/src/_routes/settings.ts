@@ -7,6 +7,7 @@ router.use('*', authenticate, requireAdmin);
 
 const ALLOWED_KEYS = [
   'custom_message', 'brevo_api_key', 'brevo_from_email', 'brevo_from_name',
+  'payment_message', 'bank_details', 'payment_qr',
 ];
 
 router.get('/', async (c) => {
