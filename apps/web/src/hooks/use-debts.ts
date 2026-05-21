@@ -13,6 +13,7 @@ export function useCreateDebt() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: {
+      person_id?: string;
       person_name: string;
       direction: DebtDirection;
       amount: number;

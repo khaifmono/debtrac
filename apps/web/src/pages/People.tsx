@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Search, User, Phone, Pencil } from 'lucide-react';
+import { Search, User, Phone, Pencil, UserPlus } from 'lucide-react';
 
 export default function People() {
   const { toast } = useToast();
@@ -29,6 +29,9 @@ export default function People() {
   const [editPerson, setEditPerson] = useState<Person | null>(null);
   const [editName, setEditName] = useState('');
   const [editPhone, setEditPhone] = useState('');
+  const [addOpen, setAddOpen] = useState(false);
+  const [addName, setAddName] = useState('');
+  const [addPhone, setAddPhone] = useState('');
 
   const updatePerson = useMutation({
     mutationFn: ({ id, data }: { id: string; data: { name: string; phone?: string | null } }) =>
@@ -43,20 +46,40 @@ export default function People() {
     },
   });
 
+  const createPerson = useMutation({
+    mutationFn: (data: { name: string; phone?: string }) => peopleApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['people'] });
+      setAddOpen(false);
+      setAddName('');
+      setAddPhone('');
+      toast({ title: 'Person added' });
+    },
+    onError: (err: Error) => {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    },
+  });
+
   const summaries = calculatePersonSummaries(debts);
-  const filteredSummaries = summaries.filter(s =>
-    s.person_name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
-  const getPersonByName = (name: string) => people.find(p => p.name === name);
+  const allPeopleDisplay = people
+    .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .map(person => {
+      const summary = summaries.find(
+        s => s.person_name.toLowerCase() === person.name.toLowerCase()
+      );
+      return {
+        person,
+        owed_to_me: summary?.owed_to_me ?? 0,
+        i_owe: summary?.i_owe ?? 0,
+        net: summary?.net ?? 0,
+      };
+    });
 
-  const openEdit = (personName: string) => {
-    const person = getPersonByName(personName);
-    if (person) {
-      setEditPerson(person);
-      setEditName(person.name);
-      setEditPhone(person.phone || '');
-    }
+  const openEdit = (person: Person) => {
+    setEditPerson(person);
+    setEditName(person.name);
+    setEditPhone(person.phone || '');
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
@@ -68,6 +91,11 @@ export default function People() {
     });
   };
 
+  const handleAddSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createPerson.mutate({ name: addName.trim(), phone: addPhone.trim() || undefined });
+  };
+
   const isLoading = debtsLoading || peopleLoading;
 
   if (isLoading) {
@@ -77,11 +105,17 @@ export default function People() {
   return (
     <Layout>
       <div className="space-y-6 max-w-4xl">
-        <div>
-          <h1 className="text-2xl font-semibold">People</h1>
-          <p className="text-muted-foreground">
-            {summaries.length} people with outstanding balances
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold">People</h1>
+            <p className="text-muted-foreground">
+              {people.length} {people.length === 1 ? 'person' : 'people'}
+            </p>
+          </div>
+          <Button size="sm" onClick={() => setAddOpen(true)}>
+            <UserPlus className="h-4 w-4 mr-1.5" />
+            Add Person
+          </Button>
         </div>
 
         <div className="relative max-w-sm">
@@ -95,76 +129,116 @@ export default function People() {
         </div>
 
         <div className="bg-card border rounded-lg divide-y">
-          {filteredSummaries.length === 0 ? (
+          {allPeopleDisplay.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
-              <p>No people found</p>
+              <p>{searchQuery ? 'No people found' : 'No people yet — add someone to get started'}</p>
             </div>
           ) : (
-            filteredSummaries.map((person) => {
-              const personRecord = getPersonByName(person.person_name);
-              return (
-                <div
-                  key={person.person_name}
-                  className="w-full p-4 hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                        <User className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <span className="font-medium">{person.person_name}</span>
-                        {personRecord?.phone && (
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Phone className="h-3 w-3" />
-                            <span>{personRecord.phone}</span>
-                          </div>
-                        )}
-                      </div>
+            allPeopleDisplay.map(({ person, owed_to_me, i_owe, net }) => (
+              <div
+                key={person.id}
+                className="w-full p-4 hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                      <User className="h-5 w-5 text-muted-foreground" />
                     </div>
+                    <div>
+                      <span className="font-medium">{person.name}</span>
+                      {person.phone && (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Phone className="h-3 w-3" />
+                          <span>{person.phone}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-                    <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3">
+                    {(owed_to_me > 0 || i_owe > 0) ? (
                       <div className="text-right">
-                        <p className={`font-semibold ${
-                          person.net >= 0 ? 'text-positive' : 'text-negative'
-                        }`}>
-                          {person.net >= 0 ? '+' : ''}{formatCurrency(person.net)}
+                        <p className={`font-semibold ${net >= 0 ? 'text-positive' : 'text-negative'}`}>
+                          {net >= 0 ? '+' : ''}{formatCurrency(net)}
                         </p>
                         <div className="flex gap-3 text-xs text-muted-foreground">
-                          {person.owed_to_me > 0 && (
-                            <span className="text-positive">Owes you {formatCurrency(person.owed_to_me)}</span>
+                          {owed_to_me > 0 && (
+                            <span className="text-positive">Owes you {formatCurrency(owed_to_me)}</span>
                           )}
-                          {person.i_owe > 0 && (
-                            <span className="text-negative">You owe {formatCurrency(person.i_owe)}</span>
+                          {i_owe > 0 && (
+                            <span className="text-negative">You owe {formatCurrency(i_owe)}</span>
                           )}
                         </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => openEdit(person.person_name)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 text-muted-foreground hover:text-[#229ED9]"
-                      >
-                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
-                        </svg>
-                      </Button>
-                    </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">No debts</span>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => openEdit(person)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-muted-foreground hover:text-[#229ED9]"
+                    >
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                      </svg>
+                    </Button>
                   </div>
                 </div>
-              );
-            })
+              </div>
+            ))
           )}
         </div>
       </div>
 
+      {/* Add Person dialog */}
+      <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) { setAddName(''); setAddPhone(''); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Person</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAddSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="add-name">Name</Label>
+              <Input
+                id="add-name"
+                value={addName}
+                onChange={(e) => setAddName(e.target.value)}
+                placeholder="Enter name"
+                required
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="add-phone">Phone Number (optional)</Label>
+              <Input
+                id="add-phone"
+                type="tel"
+                value={addPhone}
+                onChange={(e) => setAddPhone(e.target.value)}
+                placeholder="+60123456789"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setAddOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createPerson.isPending || !addName.trim()}>
+                {createPerson.isPending ? 'Adding...' : 'Add Person'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Person dialog */}
       <Dialog open={!!editPerson} onOpenChange={(open) => !open && setEditPerson(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

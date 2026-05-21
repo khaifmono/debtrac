@@ -3,6 +3,8 @@ import { Layout } from '@/components/Layout';
 import { Debt, DebtDirection } from '@/types';
 import { formatCurrency, formatDate } from '@/lib/mock-data';
 import { useDebts, useCreateDebt, useCreatePayment } from '@/hooks/use-debts';
+import { useQuery } from '@tanstack/react-query';
+import { peopleApi } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +32,7 @@ function getStatusBadgeVariant(status: string): 'unpaid' | 'partial' | 'settled'
 export default function IOwe() {
   const { toast } = useToast();
   const { data: allDebts = [], isLoading } = useDebts();
+  const { data: people = [] } = useQuery({ queryKey: ['people'], queryFn: peopleApi.getAll });
   const createDebt = useCreateDebt();
   const createPayment = useCreatePayment();
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,8 +52,8 @@ export default function IOwe() {
     .reduce((sum, d) => sum + Number(d.remaining_amount), 0);
 
   const handleDebtSubmit = (data: {
+    person_id?: string;
     person_name: string;
-    phone?: string;
     direction: DebtDirection;
     amount: number;
     due_date: string | null;
@@ -181,6 +184,7 @@ export default function IOwe() {
         open={addDebtOpen}
         onOpenChange={setAddDebtOpen}
         defaultDirection="i_owe"
+        people={people}
         onSubmit={handleDebtSubmit}
       />
 

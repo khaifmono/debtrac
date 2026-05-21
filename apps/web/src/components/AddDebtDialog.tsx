@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { DebtDirection } from '@/types';
+import { Person, DebtDirection } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,14 +17,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Command,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { Check, ChevronsUpDown, UserPlus } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface AddDebtDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultDirection?: DebtDirection;
+  people?: Person[];
   onSubmit: (data: {
+    person_id?: string;
     person_name: string;
-    phone?: string;
     direction: DebtDirection;
     amount: number;
     due_date: string | null;
@@ -32,34 +47,60 @@ interface AddDebtDialogProps {
   }) => void;
 }
 
-export function AddDebtDialog({ 
-  open, 
-  onOpenChange, 
+export function AddDebtDialog({
+  open,
+  onOpenChange,
   defaultDirection = 'owed_to_me',
-  onSubmit 
+  people = [],
+  onSubmit
 }: AddDebtDialogProps) {
+  const [comboOpen, setComboOpen] = useState(false);
+  const [personSearch, setPersonSearch] = useState('');
+  const [selectedPersonId, setSelectedPersonId] = useState<string | undefined>();
   const [personName, setPersonName] = useState('');
-  const [phone, setPhone] = useState('');
   const [direction, setDirection] = useState<DebtDirection>(defaultDirection);
   const [amount, setAmount] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
 
+  const filteredPeople = people.filter(p =>
+    p.name.toLowerCase().includes(personSearch.toLowerCase())
+  );
+
+  const isExactMatch = people.some(
+    p => p.name.toLowerCase() === personSearch.trim().toLowerCase()
+  );
+
+  const handleSelectPerson = (person: Person) => {
+    setSelectedPersonId(person.id);
+    setPersonName(person.name);
+    setPersonSearch('');
+    setComboOpen(false);
+  };
+
+  const handleCreateNew = (name: string) => {
+    setSelectedPersonId(undefined);
+    setPersonName(name.trim());
+    setPersonSearch('');
+    setComboOpen(false);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+    if (!personName.trim()) return;
+
     onSubmit({
+      person_id: selectedPersonId,
       person_name: personName.trim(),
-      phone: phone.trim() || undefined,
       direction,
       amount: parseFloat(amount),
       due_date: dueDate || null,
       notes: notes.trim() || null,
     });
 
-    // Reset form
+    setSelectedPersonId(undefined);
     setPersonName('');
-    setPhone('');
+    setPersonSearch('');
     setAmount('');
     setDueDate('');
     setNotes('');
@@ -72,29 +113,61 @@ export function AddDebtDialog({
         <DialogHeader>
           <DialogTitle>Add Debt</DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="person_name">Person Name</Label>
-            <Input
-              id="person_name"
-              value={personName}
-              onChange={(e) => setPersonName(e.target.value)}
-              placeholder="Enter name"
-              required
-              autoFocus
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number (optional)</Label>
-            <Input
-              id="phone"
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+60123456789"
-            />
+            <Label>Person</Label>
+            <Popover open={comboOpen} onOpenChange={setComboOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  className={cn('w-full justify-between font-normal', !personName && 'text-muted-foreground')}
+                >
+                  {personName || 'Select or type a name...'}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                <Command shouldFilter={false}>
+                  <CommandInput
+                    placeholder="Search or type new name..."
+                    value={personSearch}
+                    onValueChange={setPersonSearch}
+                  />
+                  <CommandList>
+                    {filteredPeople.length > 0 && (
+                      <CommandGroup heading="Existing people">
+                        {filteredPeople.map(p => (
+                          <CommandItem
+                            key={p.id}
+                            value={p.name}
+                            onSelect={() => handleSelectPerson(p)}
+                          >
+                            <Check className={cn('mr-2 h-4 w-4', selectedPersonId === p.id ? 'opacity-100' : 'opacity-0')} />
+                            {p.name}
+                            {p.phone && (
+                              <span className="ml-auto text-xs text-muted-foreground">{p.phone}</span>
+                            )}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    )}
+                    {personSearch.trim() && !isExactMatch && (
+                      <CommandGroup>
+                        <CommandItem
+                          value={`__new__${personSearch}`}
+                          onSelect={() => handleCreateNew(personSearch)}
+                        >
+                          <UserPlus className="mr-2 h-4 w-4" />
+                          Create "{personSearch.trim()}"
+                        </CommandItem>
+                      </CommandGroup>
+                    )}
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="space-y-2">
@@ -149,7 +222,7 @@ export function AddDebtDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">Add Debt</Button>
+            <Button type="submit" disabled={!personName.trim()}>Add Debt</Button>
           </div>
         </form>
       </DialogContent>

@@ -5,6 +5,8 @@ import {
   calculatePersonSummaries
 } from '@/lib/mock-data';
 import { useDebts, useCreateDebt, useCreatePayment } from '@/hooks/use-debts';
+import { useQuery } from '@tanstack/react-query';
+import { peopleApi } from '@/lib/api';
 import { SummaryCards } from '@/components/SummaryCards';
 import { DebtList } from '@/components/DebtList';
 import { PersonSummaryList } from '@/components/PersonSummaryList';
@@ -21,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 export default function Dashboard() {
   const { toast } = useToast();
   const { data: debts = [], isLoading } = useDebts();
+  const { data: people = [] } = useQuery({ queryKey: ['people'], queryFn: peopleApi.getAll });
   const createDebt = useCreateDebt();
   const createPayment = useCreatePayment();
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,8 +54,8 @@ export default function Dashboard() {
   };
 
   const handleDebtSubmit = (data: {
+    person_id?: string;
     person_name: string;
-    phone?: string;
     direction: DebtDirection;
     amount: number;
     due_date: string | null;
@@ -213,6 +216,7 @@ export default function Dashboard() {
         open={addDebtOpen}
         onOpenChange={setAddDebtOpen}
         defaultDirection={addDebtDirection}
+        people={people}
         onSubmit={handleDebtSubmit}
       />
 
